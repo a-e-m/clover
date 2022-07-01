@@ -340,7 +340,7 @@
             }
 
             function resultsPopup(answers, currentCards) {
-                const resultsUrl = window.location.origin + "#" + getAnswerString(answers, currentCards);
+                const resultsUrl = window.location.origin + "/clover#" + getAnswerString(answers, currentCards);
                 withId('result-container').className += ' done';
                 withId('result-text').innerText = resultsUrl;
                 const copyButton = withId('copy-button');
@@ -380,7 +380,10 @@
         </script>
     </head>
     <body>
-        <h1 id="title">{{ title }}</h1>
+        <div>
+            <h1 id="title">{{ title }}</h1>
+            <a href="/instructions.html">Instructions</a>
+        </div>
         <div id="play-container" class="play-container">
             <div id="card-container" class="card-container"></div>
         </div>

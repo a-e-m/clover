@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <title>Clover Instructions</title>
+        <style>
+            :root {
+                --rows: {{ rows }};
+                --columns: {{ columns }};
+                --card-size: min(calc(60vh / var(--rows)), calc(80vw / var(--columns)));
+                --gray: #444;
+                --yellow: #b5933b;
+                --green: #114611;
+                --selected: #666;
+                --background: #121213;
+                --text-color: #eeeeee;
+                --word-offset: calc(var(--card-size) / 2.4);
+            }
+
+            body {
+                color: var(--text-color);
+                background-color: var(--background);
+                text-align: center;
+                font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                justify-content: flex-start;
+                align-items: center;
+                padding-top: 1vh;
+                height: 90vh;
+                margin: 0;
+            }
+
+            p {
+                max-width: 50vh;
+            }
+        </style>
+    </head>
+    <body>
+        <a href="./">Back to game</a>
+        <a href="https://cdn.svc.asmodee.net/production-rprod/storage/downloads/games/so-clover/sc-en01-rules-16197761427wP8d.pdf">Original Game</a>
+        <h1>Instructions</h1>
+        <h2>Word Entering Mode</h2>
+        <p>Look at the two bottom-most words, i.e. the ones by the green bracket.
+            Use the text box at the bottom of the screen to enter one word that somehow connectos them or describes them both.
+            Proper nouns are allowed. Try to stick to English (no just translating a word into another language).
+        </p>
+    </body>
+</html>
