@@ -1,0 +1,658 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"> 
+        <title>Clover</title>
+        <style>
+            :root {
+                --rows: 3;
+                --columns: 2;
+                --card-size: min(calc(60vh / var(--rows)), calc(80vw / var(--columns)));
+                --gray: #444;
+                --yellow: #b5933b;
+                --green: #114611;
+                --selected: #666;
+                --background: #121213;
+                --text-color: #eeeeee;
+                --word-offset: calc(var(--card-size) / 2.4);
+            }
+
+            body {
+                touch-action: manipulation;
+                color: var(--text-color);
+                background-color: var(--background);
+                text-align: center;
+                font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+                display: flex;
+                flex-direction: column;
+                justify-content: space-evenly;
+                align-items: center;
+                padding-top: 1vh;
+                height: 90vh;
+                margin: 0;
+            }
+            h1 {
+                margin: 0;
+                font-size: 4vh;
+                font-family: Cambria, Cochin, Georgia, Times, 'Times New Roman', serif;
+            }
+            @keyframes buttonpress {
+                from {
+                    opacity: 0.8;
+                }
+                50% {
+                    opacity: 0.8;
+                    opacity: 1;
+                }
+                to {
+                    opacity: 1;
+                }
+            }
+            button {
+                background-color: gray;
+                color: white;
+                border: none;
+                font-size: var(--key-size);
+                box-sizing: border-box;
+            }
+            @media (pointer: fine) {
+                button:hover {
+                    background-color: rgb(150, 150, 150);
+                }
+            }
+            button:active {
+                animation: buttonpress 0.5s;
+            }
+            button:disabled {
+                background-color: var(--gray);
+            }
+            @keyframes fadein {
+                from {
+                    display: flex;
+                    opacity: 0;
+                }
+
+                50% {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .result-container {
+                position: fixed;
+                top: 0;
+                left: 0;
+                bottom: 0;
+                right: 0;
+                display: none;
+                background-color: rgba(0, 0, 0, 0.6);
+            }
+
+            .result-container.done {
+                animation: fadein 0.5s;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .results {
+                font-size: calc(var(--letter-size) * 0.25);
+                background-color: var(--background);
+                border: 0.5vmin solid black;
+                padding: 10vh;
+            }
+ 
+            .card {
+                width: var(--card-size);
+                height: var(--card-size);
+                background-color: var(--gray);
+                position: relative;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                margin: calc(var(--card-size) * 0.05);
+                touch-action: manipulation;
+                -webkit-user-select: none;  
+                -moz-user-select: none;    
+                -ms-user-select: none;      
+                user-select: none;
+            }
+
+            .card.animated {
+                transition: transform 0.8s ease-in-out;
+            }
+
+            .card .word {
+                position: absolute;
+            }
+
+            .card :nth-child(1) {
+                transform: rotate(0deg) translate(0px, var(--word-offset));
+            }
+
+            .card :nth-child(2) {
+                transform: rotate(90deg) translate(0px, var(--word-offset));
+            }
+
+            .card :nth-child(3) {
+                transform: rotate(180deg) translate(0px, var(--word-offset));
+            }
+
+            .card :nth-child(4) {
+                transform: rotate(270deg) translate(0px, var(--word-offset));
+            }
+
+            .card-container {
+                display: grid;
+                grid-template-columns: 1fr 1fr;
+                grid-template-rows: 1fr 1fr;
+                position: relative;
+                transition: transform 1s ease-in-out;
+                transform: rotate(var(--card-container-rotation));
+            }
+
+            .word-entry {
+                border-bottom: 10px solid var(--green);
+                padding-bottom: 10px;
+                border-radius: 20px;
+            }
+
+            .card-container .card-1 {
+                transform: rotate(var(--card-1-rotation));
+            }
+
+            .card-container .card-2 {
+                transform: rotate(var(--card-2-rotation));
+            }
+
+            .card-container .card-3 {
+                transform: rotate(var(--card-3-rotation));
+            }
+
+            .card-container .card-4 {
+                transform: rotate(var(--card-4-rotation));
+            }
+
+            .play-container .card-5 {
+                transform: rotate(var(--card-5-rotation));
+                margin: calc(var(--card-size) * 0.1) auto;
+            }
+
+            .spinner {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+            }
+
+            .spin-button {
+                width: 50px;
+                height: 50px;
+                border-radius: 25px;
+            }
+
+            .answer-container {
+                display: flex;
+                flex-direction: row;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .word-entry::after {
+                font-size: 30px;
+                color: var(--green);
+                margin-top: -25px;
+                content: "⇓";
+                position: absolute;
+                transform: translate(-50%, 75%);
+                z-index: -1;
+            }
+
+            .answer {
+                position: absolute;
+                text-shadow: 1px 1px 2px var(--background);
+            }
+
+            .answer-1 {
+                bottom: 0;
+                left: 50%;
+                transform: translate(-50%, 50%);
+            }
+
+            .answer-2 {
+                top: 50%;
+                right: 0;
+                transform: translate(50%, -50%) rotate(270deg);
+            }
+
+            .answer-3 {
+                left: 50%;
+                transform: translate(-50%, -50%) rotate(180deg);
+            }
+
+            .answer-4 {
+                top: 50%;
+                transform: translate(-50%, -50%) rotate(90deg);
+            }
+
+            .answer-button {
+                border-radius: 0.2vh;
+                margin: 1vh;
+            }
+
+            .hidden {
+                display: none;
+            }
+
+            .focused {
+                background-color: var(--selected);
+            }
+
+            .bottom-card-space {
+
+            }
+        </style>
+        <script>
+            const cards = [["big", "smile", "shirt", "lamb"], ["airport", "sandals", "cheese", "grains"], ["cookware", "ostrich", "oil", "boots"], ["restaurant", "gift", "boat", "whisker"], ["stadium", "glasses", "onion", "desktop"], ["hair", "medicine", "ears", "street"], ["bones", "factory", "boxers", "hat"], ["baby", "strawberry", "koala", "cinema"], ["wolf", "teen", "finger", "pencil"], ["apartment", "leg", "scale", "garage"], ["notebook", "town", "estate", "london"], ["shark", "swan", "gauva", "suitcase"], ["wings", "photographer", "pad", "milk"], ["saxophone", "tomato", "fruit", "shower"], ["bakery", "head", "tissue", "stairs"], ["armchair", "music", "high", "father"], ["plant", "vest", "forest", "monkey"], ["toes", "zebra", "panther", "spoon"], ["heels", "mouse", "film", "eyes"], ["sky", "whale", "cello", "bikini"], ["candy", "shampoo", "theater", "bag"], ["bra", "scissors", "deer", "temple"], ["professor", "supermarket", "lion", "tablet"], ["chair", "bitterness", "crow", "soap"], ["couch", "cat", "egg", "buckles"], ["architect", "cashier", "pyramid", "giraffe"], ["kangaroo", "sunglasses", "aunt", "own"], ["farm", "fox", "snowman", "nose"], ["pharmacy", "carpet", "bad", "turkey"], ["pumpkin", "jumper", "toothpaste", "designer"], ["fork", "toothbrush", "spoon", "buffalo"], ["composer", "lips", "skirt", "neck"], ["conditioner", "lawyer", "rainbow", "young"], ["tail", "jewelry", "pouch", "musician"], ["wallet", "grandmother", "newspaper", "train"], ["donkey", "singer", "stove", "voice"], ["elephant", "waist", "chocolate", "pencil"], ["pants", "ginger", "lung", "suit"], ["sun", "park", "mobile", "mother"], ["frock", "ring", "important", "mall"], ["car", "hamburger", "surgeon", "panda"], ["hospital", "next", "brother", "watch"], ["tie", "radio", "vase", "mirror"], ["butter", "tree", "shorts", "ambulance"], ["hostel", "cane", "public", "dog"], ["noodles", "xylophone", "plane", "pagoda"], ["freezer", "rice", "church", "grapes"], ["cheeks", "popcorn", "dolphin", "uncle"], ["potato", "sofa", "woman", "tongue"], ["parrot", "coffee", "sweater", "old"], ["luggage", "slippers", "cabin", "tea"], ["clock", "juicer", "gloves", "desk"], ["wheelchair", "hammer", "vehicle", "lighter"], ["guest", "detective", "sink", "skyscraper"], ["chicken", "salt", "library", "bank"], ["country", "pasta", "waiter", "horn"], ["bucket", "jacket", "belt", "soup"], ["garlic", "stomach", "brass", "black"], ["children", "keyboard", "bill", "wrist"], ["long", "flower", "sheep", "back"], ["right", "jersey", "grandfather", "paper"], ["dresser", "school", "son", "microscope"], ["painter", "trousers", "toy", "table"], ["bed", "goat", "truck", "blouse"], ["parfume", "television", "tunnel", "oven"], ["apron", "castle", "tiger", "wound"], ["fan", "purse", "little", "canoe"], ["market", "telephone", "bookstore", "judge"], ["mango", "orange", "pharmacist", "blazer"], ["dress", "boy", "pig", "senator"], ["book", "horse", "balloon", "ball"], ["air", "frog", "cravat", "sari"], ["hotel", "cardigan", "crest", "teacher"], ["first", "razor", "remote", "blender"], ["daughter", "other", "brain", "rabbit"], ["sand", "heart", "guitar", "bow"], ["zoo", "sandwich", "galaxy", "moonlight"], ["spaghetti", "shoes", "bear", "jaw"], ["villa", "laptop", "new", "shoulder"], ["piano", "cafe", "nurse", "dentist"], ["gown", "peacock", "sparrow", "costume"], ["doctor", "crib", "knife", "pipe"], ["smoke", "bookcase", "bat", "model"], ["bridge", "bow", "casino", "last"], ["bread", "museum", "refrigerator", "early"], ["choker", "chest", "phone", "cow"], ["pigeon", "drum", "bulb", "ribs"], ["leggings", "aircraft", "bermudas", "lamp"], ["taxi", "perfume", "pancake", "road"], ["mouth", "noise", "large", "host"], ["apple", "antlers", "ship", "girl"], ["hen", "owl", "water", "computer"], ["bird", "flag", "alligator", "foot"], ["small", "star", "sister", "cabinet"], ["shrimp", "kid", "governor", "herbs"], ["ankle", "socks", "turtle", "ocean"], ["hand", "lemon", "village", "stairs"], ["beans", "sandals", "underwear", "cooker"], ["arrow", "cap", "fish", "great"], ["palm", "different", "umbrella", "veterinarian"], ["violin", "cave", "board", "earrings"], ["police", "man", "house", "physician"]];
+
+            function withId(id) {
+                return document.getElementById(id);
+            }
+
+            function el(tag, text, className) {
+                const element = document.createElement(tag);
+                if (text) {
+                    const textEl = document.createTextNode(text);
+                    element.appendChild(textEl);
+                }
+                if (className) {
+                    element.className = className;
+                }
+                return element;
+            }
+
+            function getRandomInt(min, max) {
+                min = Math.ceil(min);
+                max = Math.floor(max);
+                return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+            }
+
+            function randomChoice(list) {
+                const index = getRandomInt(0, list.length);
+                return [list[index], index];
+            }
+
+            function randomCard() {
+                return randomChoice(cards);
+            }
+
+            function fallbackCopyTextToClipboard(text) {
+                var textArea = document.createElement("textarea");
+                textArea.value = text;
+                
+                // Avoid scrolling to bottom
+                textArea.style.top = "0";
+                textArea.style.left = "0";
+                textArea.style.position = "fixed";
+
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+
+                try {
+                    var successful = document.execCommand('copy');
+                    var msg = successful ? 'successful' : 'unsuccessful';
+                    console.log('Fallback: Copying text command was ' + msg);
+                } catch (err) {
+                    console.error('Fallback: Oops, unable to copy', err);
+                }
+
+                document.body.removeChild(textArea);
+            }
+
+            function copyTextToClipboard(text) {
+                if (!navigator.clipboard) {
+                    fallbackCopyTextToClipboard(text);
+                    return;
+                }
+                navigator.clipboard.writeText(text).then(function() {
+                    console.log('Async: Copying to clipboard was successful!');
+                }, function(err) {
+                    console.error('Async: Could not copy text: ', err);
+                });
+            }
+
+            function setStyleVar(name, value) {
+                document.documentElement.style.setProperty(`--${name}`, value);
+            }
+
+            function getAnswerString(answers, currentCards) {
+                const result = {
+                    answers: answers.map(obj => obj.answer),
+                    cards: currentCards.map(obj => obj.index),
+                };
+                const [extraCard, extraCardIndex] = randomCard();
+                result.cards.push(extraCardIndex);
+                return JSON.stringify(result);
+            }
+
+            function resultsPopup(answers, currentCards) {
+                const resultsUrl = window.location.origin + "#" + getAnswerString(answers, currentCards);
+                withId('result-container').className += ' done';
+                withId('result-text').innerText = resultsUrl;
+                const copyButton = withId('copy-button');
+                copyButton.addEventListener('click', () => {
+                    copyTextToClipboard(resultsUrl);
+                    withId('result-container').className = 'result-container';
+                });
+                const exitButton = withId('exit-button');
+                exitButton.addEventListener('click', () => {
+                    withId('result-container').className = 'result-container';
+                });
+            }
+
+            function updateClasses(obj) {
+                obj.el.className = obj.classes.join(" ");
+            }
+
+            function rotate(cardObj, rotation) {
+                if (rotation !== undefined) {
+                    cardObj.rotation += rotation;
+                } else {
+                    cardObj.rotation = cardObj.rotation + 90;
+                }
+                cardObj.classes.length = 1;
+                cardObj.classes.push("rotate-" + cardObj.rotation);
+                cardObj.classes.push(`${cardObj.stylePrefix}`);
+                updateClasses(cardObj);
+                setStyleVar(`${cardObj.stylePrefix}-rotation`, `${cardObj.rotation}deg`);
+                withId("answer-input").value = "";
+            }
+
+            const isTouchDevice = () => {  
+                return (('ontouchstart' in window) ||  
+                    (navigator.maxTouchPoints > 0) ||  
+                    (navigator.msMaxTouchPoints > 0));  
+            }  
+        </script>
+    </head>
+    <body>
+        <h1 id="title">Clover</h1>
+        <div id="play-container" class="play-container">
+            <div id="card-container" class="card-container"></div>
+        </div>
+        <div id="answer-container" class="answer-container">
+            <form id="answer-form" class="answer-form">
+                <input name="answer" id="answer-input" placeholder="Enter word" type="text"></input>
+                <button id="answer-button" class="answer-button" type="submit">Enter</button>
+            </form>
+        </div>
+        <div id="result-container" class="result-container">
+            <div id="results" class="results">
+                <div id="result-text">
+
+                </div>
+                <button id="copy-button" class="copy-button">Copy Results</button>
+                <button id="exit-button" class="exit-button">Close</button>
+            </div>
+        </div>
+        <script>
+            let answers = [{}, {}, {}, {}];
+            let startingCards = [];
+            const currentCards = [];
+            const hash = decodeURI(window.location.hash.slice(1));
+            const wordEntryMode = hash.length === 0;
+
+            const playContainerEl = withId("play-container");
+            const cardContainerEl = withId("card-container");
+            const answerContainerEl = withId("answer-container");
+            
+            if (!wordEntryMode) {
+                answerContainerEl.className += " hidden";
+                const data = JSON.parse(hash);
+                
+                answers = data.answers.map((answer, index) => {
+                    const answerEl = el("div", answer, `answer answer-${index + 1}`);
+                    cardContainerEl.appendChild(answerEl);
+                    return {answer: answer, el: answerEl};
+                });
+
+                startingCards = data.cards;
+            } else {
+                playContainerEl.className += " word-entry";
+            }
+
+            const cardContainer = {
+                el: cardContainerEl,
+                classes: ["card-container"],
+                rotation: 0,
+                stylePrefix: "card-container"
+            };
+
+            const cardNum = Math.max(4, startingCards.length);
+            for (let i = 1; i <= cardNum; ++i) {
+                const card = {words: []};
+                const cardEl = el("div", null, "card");
+                cardEl.dataset.index = i;
+
+                let cardWords, index;
+                if (!wordEntryMode) {
+                    [index, startingIndex] = randomChoice(startingCards);
+                    startingCards.splice(startingIndex, 1);
+                    cardWords = cards[index];
+                } else {
+                    [cardWords, index] = randomCard();
+                }
+                card.index = index;
+                for (let j = 0; j < 4; ++j) {
+                    const word = cardWords[j];
+                    const wordEl = el("div", word, "word");
+                    cardEl.appendChild(wordEl);
+                    card.words.push({
+                        word,
+                        wordEl
+                    });
+                }
+
+                let rotation = 0;
+                if (!wordEntryMode) {
+                    rotation = randomChoice([0, 90, 180, 270])[0];
+                }
+
+                // cardEl.appendChild(el("div", "↺", "spinner card-spinner"));
+                const cardObj = {
+                    card,
+                    el: cardEl,
+                    rotation: rotation,
+                    classes: ["card animated"],
+                    stylePrefix: `card-${i}`,
+                    index,
+                    listIndex: i - 1
+                };
+                if (i === 5) {
+                    playContainerEl.appendChild(cardEl);
+                } else {
+                    cardContainerEl.appendChild(cardEl);
+                }
+                
+                rotate(cardObj, 0);
+                currentCards.push(cardObj);
+            }
+
+            const form = withId("answer-form");
+
+            function handleAnswer() {
+                const formData = new FormData(form);
+                const answer = formData.get("answer");
+                if (!answer) {
+                    return;
+                }
+                const currentWord = (cardContainer.rotation % 360) / 90;
+                let answerEl = answers[currentWord].el;
+                if (answerEl) {
+                    answerEl.innerText = answer;
+                } else {
+                    answerEl = el("div", answer, `answer answer-${currentWord + 1}`);
+                }
+                cardContainerEl.appendChild(answerEl);
+                answers[currentWord] = {
+                    answer,
+                    el: answerEl
+                };
+
+                if (answers.every(obj => obj.answer)) {
+                    resultsPopup(answers, currentCards);
+                }
+            }
+
+            form.addEventListener("submit", function (event) {
+                event.preventDefault();
+                handleAnswer();
+            });
+
+            const overallSpinEl = el("button", "↺", "spinner spin-button");
+            overallSpinEl.addEventListener("click", () => {
+                handleAnswer();
+                rotate(cardContainer);
+            });
+            cardContainerEl.appendChild(overallSpinEl);
+
+            let previousAngle = null;
+
+            function getRotationOrigin() {
+                const erect = overallSpinEl.getBoundingClientRect();
+                const [x, y] = [erect.x + erect.width / 2, erect.y + erect.height / 2];
+                return [x, y];
+            }
+
+            function getAngle(event) {
+                const [originX, originY] = getRotationOrigin();
+                rotation = Math.atan2(event.pageY - originY, 
+                    event.pageX - originX) * 180 / Math.PI;
+                return rotation;
+            }
+
+            window.addEventListener('hashchange', () => window.location.reload());
+
+            if (wordEntryMode) {
+                cardContainerEl.addEventListener("touchstart", function (event) {
+                    previousAngle = getAngle(event.touches[0]);
+                });
+
+                cardContainerEl.addEventListener("touchmove", function (event) {
+                    if (previousAngle === null) {
+                        return;
+                    }
+                    const currentAngle = getAngle(event.touches[0]);
+                    let delta = currentAngle - previousAngle;
+                    if (Math.abs(delta) > 300) {
+                        return;
+                    }
+                    rotate(cardContainer, delta);
+                    previousAngle = currentAngle;
+                });
+
+                cardContainerEl.addEventListener("touchend", function (event) {
+                    cardContainer.rotation = Math.round(cardContainer.rotation / 90) * 90;
+                    rotate(cardContainer, 0);
+                    previousAngle = null;
+                });
+            } else {
+                function swap(selectedCard, card) {
+                    const selectedCardEl = selectedCard.el;
+                    const swapCardEl = card.el;
+                    if (swapCardEl !== selectedCardEl) {
+                        if (selectedCard.listIndex === 4) {
+                            selectedCard.rotation -= cardContainer.rotation;
+                            card.rotation += cardContainer.rotation;
+                        }
+                        if (card.listIndex === 4) {
+                            card.rotation -= cardContainer.rotation;
+                            selectedCard.rotation += cardContainer.rotation;
+                        }
+
+                        [currentCards[selectedCard.listIndex], currentCards[card.listIndex]] = [currentCards[card.listIndex], currentCards[selectedCard.listIndex]];
+                        [selectedCardEl.innerHTML, swapCardEl.innerHTML] = [swapCardEl.innerHTML, selectedCardEl.innerHTML];
+                        [selectedCard.rotation, card.rotation] = [card.rotation, selectedCard.rotation]
+                        card.classes[0] = "card";
+                        selectedCard.classes[0] = "card"
+                        rotate(selectedCard, 0);
+                        rotate(card, 0);
+                        card.classes[0] = "animated card";
+                        selectedCard.classes[0] = "animated card"
+                    } else {
+                        rotate(card);
+                    }
+                }
+
+                /* ### DRAG AND DROP CODE ### */
+
+                let selectedCard = null;
+
+                function startDrag(event, card) {
+                    event.preventDefault();
+                    selectedCard = card
+                }
+
+                function endDrag(event, card) {
+                    event.preventDefault();
+                    swap(selectedCard, card);
+                }
+
+                /* ### LONG PRESS CODE ### */
+
+                let startTime = null;
+                let timerFunc = null;
+                const LONG_PRESS_TIME = 400;
+
+                function startPress(event, card) {
+                    event.preventDefault();
+                    startTime = Date.now();
+                    timerFunc = setTimeout(function () {
+                        Navigator.vibrate && Navigator.vibrate(20);
+                        card.el.className += " focused";
+                    }, LONG_PRESS_TIME);
+                }
+
+                function clearTimer() {
+                    if (timerFunc) {
+                            clearTimeout(timerFunc);
+                            timerFunc = null;
+                        }
+                }
+
+                function endPress(event, card) {
+                    const endTime = Date.now();
+                    if (selectedCard) {
+                        clearTimer();
+                        swap(selectedCard, card);
+                        selectedCard = null;
+                        return;
+                    }
+ 
+                    if ((endTime - startTime) > LONG_PRESS_TIME) {
+                        console.log("long press");
+                        selectedCard = card;
+                        card.el.className += " focused";
+                    } else {
+                        clearTimer();
+                        rotate(card);
+                    }
+                }
+
+                currentCards.forEach((card, index) => {
+                    if (isTouchDevice()) {
+                        card.el.addEventListener("touchstart", (ev) => startPress(ev, card));
+                        card.el.addEventListener("touchend", (ev) => endPress(ev, card));
+                    }
+
+                    card.el.addEventListener("mousedown", (ev) => startDrag(ev, card));
+                    card.el.addEventListener("mouseup", (ev) => endDrag(ev, card));
+                });
+            }
+        </script>
+    </body>
+</html>
