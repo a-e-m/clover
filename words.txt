@@ -259,7 +259,7 @@ shed
 turtle
 statue
 beach
-orning
+morning
 head
 machine
 champion
