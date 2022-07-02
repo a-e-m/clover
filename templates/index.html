@@ -402,7 +402,6 @@
             let startingCards = [];
             const currentCards = [];
             const queryParams = new URLSearchParams(window.location.search);
-            console.log(queryParams);
             const wordEntryMode = window.location.search.length === 0;
 
             const playContainerEl = withId("play-container");
@@ -604,23 +603,26 @@
                 let timerFunc = null;
                 const LONG_PRESS_TIME = 300;
 
-                function startPress(event, card) {
+                const startPress = (event, card) => {
                     event.preventDefault();
                     startTime = Date.now();
-                    timerFunc = setTimeout(function () {
+                    timerFunc = window.setTimeout(() => {
+                        window.navigator.vibrate && window.navigator.vibrate.vibrate(200);
                         card.el.className += " focused";
                     }, LONG_PRESS_TIME);
                 }
 
-                function clearTimer() {
+                const clearTimer = () => {
                     if (timerFunc) {
                             clearTimeout(timerFunc);
                             timerFunc = null;
                         }
                 }
 
-                function endPress(event, card) {
+                const endPress = (event, card) => {
                     const endTime = Date.now();
+                    // withId("title").innerText = "end:" + (endTime - startTime) + (selectedCard);
+
                     if (selectedCard) {
                         clearTimer();
                         swap(selectedCard, card);
@@ -629,10 +631,10 @@
                     }
  
                     if ((endTime - startTime) > LONG_PRESS_TIME) {
-                        console.log("long press");
                         selectedCard = card;
                         card.el.className += " focused";
                     } else {
+                        selectedCard = null;
                         clearTimer();
                         rotate(card);
                     }
