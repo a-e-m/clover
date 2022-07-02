@@ -285,8 +285,12 @@
                 return [list[index], index];
             }
 
-            function randomCard() {
-                return randomChoice(cards);
+            function randomCard(alreadySeen) {
+                const [card, index] = randomChoice(cards);
+                if (alreadySeen && alreadySeen.has(index)) {
+                    return randomCard(alreadySeen);
+                }
+                return [card, index];
             }
 
             function fallbackCopyTextToClipboard(text) {
@@ -430,6 +434,7 @@
             };
 
             const cardNum = Math.max(4, startingCards.length);
+            const alreadySeen = new Set();
             for (let i = 1; i <= cardNum; ++i) {
                 const card = {words: []};
                 const cardEl = el("div", null, "card");
@@ -441,7 +446,8 @@
                     startingCards.splice(startingIndex, 1);
                     cardWords = cards[index];
                 } else {
-                    [cardWords, index] = randomCard();
+                    [cardWords, index] = randomCard(alreadySeen);
+                    alreadySeen.add(index);
                 }
                 card.index = index;
                 for (let j = 0; j < 4; ++j) {

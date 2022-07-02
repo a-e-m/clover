@@ -3,7 +3,7 @@ import json
 from jinja2 import Environment, FileSystemLoader
 
 def get_metadata(filename='metadata.json'):
-    with open(filename, 'rt') as file:
+    with open(filename, 'rt', encoding='utf-8') as file:
         return json.load(file)
 
 def get_word_list(filename):
