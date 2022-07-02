@@ -616,7 +616,6 @@
                     event.preventDefault();
                     startTime = Date.now();
                     timerFunc = setTimeout(function () {
-                        Navigator.vibrate && Navigator.vibrate(20);
                         card.el.className += " focused";
                     }, LONG_PRESS_TIME);
                 }
