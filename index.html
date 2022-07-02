@@ -12,6 +12,9 @@
                 --gray: #444;
                 --yellow: #b5933b;
                 --green: #114611;
+                --red: #671212;
+                --greenSelected: #185e18;
+                --redSelected: #971a1a;
                 --selected: #666;
                 --background: #121213;
                 --text-color: #eeeeee;
@@ -119,9 +122,6 @@
                 -moz-user-select: none;    
                 -ms-user-select: none;      
                 user-select: none;
-            }
-
-            .card.animated {
                 transition: transform 0.8s ease-in-out;
             }
 
@@ -160,24 +160,27 @@
                 border-radius: 20px;
             }
 
-            .card-container .card-1 {
+            .card-1 {
                 transform: rotate(var(--card-1-rotation));
             }
 
-            .card-container .card-2 {
+            .card-2 {
                 transform: rotate(var(--card-2-rotation));
             }
 
-            .card-container .card-3 {
+            .card-3 {
                 transform: rotate(var(--card-3-rotation));
             }
 
-            .card-container .card-4 {
+            .card-4 {
                 transform: rotate(var(--card-4-rotation));
             }
 
-            .play-container .card-5 {
+            .card-5 {
                 transform: rotate(var(--card-5-rotation));
+            }
+
+            .play-container > .card {
                 margin: calc(var(--card-size) * 0.1) auto;
             }
 
@@ -192,6 +195,7 @@
                 width: 50px;
                 height: 50px;
                 border-radius: 25px;
+                z-index: 100;
             }
 
             .answer-container {
@@ -251,8 +255,28 @@
                 background-color: var(--selected);
             }
 
-            .bottom-card-space {
+            .correct {
+                background-color: var(--green);
+            }
 
+            .correct::after {
+                content: "◯"
+            }
+
+            .focused.correct {
+                background-color: var(--greenSelected);
+            }
+
+            .wrong {
+                background-color: var(--red);
+            }
+
+            .wrong::after {
+                content: "✘"
+            }
+
+            .focused.wrong {
+                background-color: var(--redSelected);
             }
         </style>
         <script>
@@ -277,12 +301,20 @@
             function getRandomInt(min, max) {
                 min = Math.ceil(min);
                 max = Math.floor(max);
-                return Math.floor(Math.random() * (max - min) + min); //The maximum is exclusive and the minimum is inclusive
+                // The maximum is exclusive and the minimum is inclusive
+                return Math.floor(Math.random() * (max - min) + min);
             }
 
             function randomChoice(list) {
                 const index = getRandomInt(0, list.length);
                 return [list[index], index];
+            }
+
+            function shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
             }
 
             function randomCard(alreadySeen) {
@@ -333,10 +365,17 @@
                 document.documentElement.style.setProperty(`--${name}`, value);
             }
 
+            function getCardHash(cardObj) {
+                return [cardObj.listIndex, cardObj.index, (cardObj.rotation % 360)].join('-');
+            }
+
             function getAnswerString(answers, currentCards) {
+                cardsCopy = [...currentCards];
+                shuffleArray(cardsCopy);
                 const result = {
                     answers: answers.map(obj => obj.answer),
-                    cards: currentCards.map(obj => obj.index),
+                    cards: cardsCopy.map(obj => [obj.index, getCardHash(obj)].join('|'))
+
                 };
                 const [extraCard, extraCardIndex] = randomCard();
                 result.cards.push(extraCardIndex);
@@ -371,10 +410,26 @@
                 cardObj.classes.length = 1;
                 cardObj.classes.push("rotate-" + cardObj.rotation);
                 cardObj.classes.push(`${cardObj.stylePrefix}`);
+                if (cardObj.listIndex !== undefined) {
+                    cardObj.el.style.order = cardObj.listIndex;
+                }
                 updateClasses(cardObj);
                 setStyleVar(`${cardObj.stylePrefix}-rotation`, `${cardObj.rotation}deg`);
                 withId("answer-input").value = "";
             }
+
+            // from https://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript
+            const cyrb53 = function (str, seed = 0) {
+                let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
+                for (let i = 0, ch; i < str.length; i++) {
+                    ch = str.charCodeAt(i);
+                    h1 = Math.imul(h1 ^ ch, 2654435761);
+                    h2 = Math.imul(h2 ^ ch, 1597334677);
+                }
+                h1 = Math.imul(h1 ^ (h1>>>16), 2246822507) ^ Math.imul(h2 ^ (h2>>>13), 3266489909);
+                h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
+                return (h2>>>0).toString(16).padStart(8,0) + (h1>>>0).toString(16).padStart(8,0);
+            };
         </script>
     </head>
     <body>
@@ -387,10 +442,13 @@
             <div id="card-container" class="card-container"></div>
         </div>
         <div id="answer-container" class="answer-container">
-            <form id="answer-form" class="answer-form">
+            <form id="word-form" class="answer-form">
                 <input name="answer" id="answer-input" placeholder="Enter word" type="text"></input>
                 <button id="answer-button" class="answer-button" type="submit">Enter</button>
             </form>
+            <div id="check-form" class="check-form">
+                <button id="check-button" class="check-button">Check</button>
+            </div>
         </div>
         <div id="result-container" class="result-container">
             <div id="results" class="results">
@@ -405,15 +463,26 @@
             let answers = [{}, {}, {}, {}];
             let startingCards = [];
             const currentCards = [];
+            const hashes = new Set();
             const queryParams = new URLSearchParams(window.location.search);
             const wordEntryMode = window.location.search.length === 0;
 
             const playContainerEl = withId("play-container");
             const cardContainerEl = withId("card-container");
-            const answerContainerEl = withId("answer-container");
             
             if (!wordEntryMode) {
-                answerContainerEl.className += " hidden";
+                withId("word-form").className += " hidden";
+                withId("check-button").addEventListener("click", () => {
+                    currentCards.forEach(card => {
+                        if (hashes.has(getCardHash(card))) {
+                            card.classes[0] = "card correct";
+                            rotate(card, 0);
+                        } else {
+                            card.classes[0] = "card wrong";
+                            rotate(card, 0);
+                        }
+                    });
+                });
                 
                 answers = queryParams.get("answers").split(",").map((answer, index) => {
                     const answerEl = el("div", answer, `answer answer-${index + 1}`);
@@ -421,8 +490,18 @@
                     return {answer: answer, el: answerEl};
                 });
 
-                startingCards = queryParams.get("cards").split(",");
+                 queryParams.get("cards").split(",").forEach(card => {
+                    const [cardIndex, hash] = card.split('|');
+                    startingCards.push(cardIndex);
+                    hashes.add(hash); 
+                });
+
+                if (hashes.size === 1) {
+                    // invalid hashes from old url
+                    withId("check-form").className += " hidden";
+                }
             } else {
+                withId("check-form").className += " hidden";
                 playContainerEl.className += " word-entry";
             }
 
@@ -440,7 +519,7 @@
                 const cardEl = el("div", null, "card");
                 cardEl.dataset.index = i;
 
-                let cardWords, index;
+                let cardWords, index, startingIndex;
                 if (!wordEntryMode) {
                     [index, startingIndex] = randomChoice(startingCards);
                     startingCards.splice(startingIndex, 1);
@@ -461,16 +540,13 @@
                 }
 
                 let rotation = 0;
-                if (!wordEntryMode) {
-                    rotation = randomChoice([0, 90, 180, 270])[0];
-                }
+                rotation = randomChoice([0, 90, 180, 270])[0];
 
-                // cardEl.appendChild(el("div", "↺", "spinner card-spinner"));
                 const cardObj = {
                     card,
                     el: cardEl,
                     rotation: rotation,
-                    classes: ["card animated"],
+                    classes: ["card"],
                     stylePrefix: `card-${i}`,
                     index,
                     listIndex: i - 1
@@ -485,7 +561,7 @@
                 currentCards.push(cardObj);
             }
 
-            const form = withId("answer-form");
+            const form = withId("word-form");
 
             function handleAnswer() {
                 const formData = new FormData(form);
@@ -567,23 +643,22 @@
                     const swapCardEl = card.el;
                     if (swapCardEl !== selectedCardEl) {
                         if (selectedCard.listIndex === 4) {
-                            selectedCard.rotation -= cardContainer.rotation;
-                            card.rotation += cardContainer.rotation;
+                            playContainerEl.replaceChild(swapCardEl, selectedCardEl);
+                            cardContainerEl.appendChild(selectedCardEl);
+                            // selectedCard.rotation -= cardContainer.rotation;
+                            // card.rotation += cardContainer.rotation;
                         }
                         if (card.listIndex === 4) {
-                            card.rotation -= cardContainer.rotation;
-                            selectedCard.rotation += cardContainer.rotation;
+                            // card.rotation -= cardContainer.rotation;
+                            // selectedCard.rotation += cardContainer.rotation;
+                            playContainerEl.replaceChild(selectedCardEl, swapCardEl);
+                            cardContainerEl.appendChild(swapCardEl);
                         }
 
                         [currentCards[selectedCard.listIndex], currentCards[card.listIndex]] = [currentCards[card.listIndex], currentCards[selectedCard.listIndex]];
-                        [selectedCardEl.innerHTML, swapCardEl.innerHTML] = [swapCardEl.innerHTML, selectedCardEl.innerHTML];
-                        [selectedCard.rotation, card.rotation] = [card.rotation, selectedCard.rotation]
-                        card.classes[0] = "card";
-                        selectedCard.classes[0] = "card"
+                        [selectedCard.listIndex, card.listIndex] = [card.listIndex, selectedCard.listIndex];
                         rotate(selectedCard, 0);
                         rotate(card, 0);
-                        card.classes[0] = "animated card";
-                        selectedCard.classes[0] = "animated card"
                     } else {
                         rotate(card);
                     }
@@ -610,7 +685,9 @@
                 const LONG_PRESS_TIME = 300;
 
                 const startPress = (event, card) => {
-                    event.preventDefault();
+                    if (event.type === "touchstart") {
+                        event.preventDefault();
+                    }
                     startTime = Date.now();
                     timerFunc = window.setTimeout(() => {
                         card.el.className += " focused";
@@ -627,7 +704,6 @@
 
                 const endPress = (event, card) => {
                     const endTime = Date.now();
-                    // withId("title").innerText = "end:" + (endTime - startTime) + (selectedCard);
 
                     if (selectedCard) {
                         clearTimer();
@@ -646,7 +722,7 @@
                     }
                 }
 
-                currentCards.forEach((card, index) => {
+                currentCards.forEach(card => {
                     card.el.addEventListener("touchstart", (ev) => startPress(ev, card));
                     card.el.addEventListener("touchend", (ev) => endPress(ev, card));
 
