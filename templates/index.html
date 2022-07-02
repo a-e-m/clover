@@ -366,7 +366,7 @@
             }
 
             function getCardHash(cardObj) {
-                return [cardObj.listIndex, cardObj.index, (cardObj.rotation % 360)].join('-');
+                return cyrb53([cardObj.listIndex, cardObj.index, (cardObj.rotation % 360)].join('-'));
             }
 
             function getAnswerString(answers, currentCards) {
