@@ -607,8 +607,8 @@
                     event.preventDefault();
                     startTime = Date.now();
                     timerFunc = window.setTimeout(() => {
-                        window.navigator.vibrate && window.navigator.vibrate.vibrate(200);
                         card.el.className += " focused";
+                        window.navigator.vibrate && window.navigator.vibrate(200);
                     }, LONG_PRESS_TIME);
                 }
 
