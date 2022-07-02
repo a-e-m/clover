@@ -336,11 +336,11 @@
                 };
                 const [extraCard, extraCardIndex] = randomCard();
                 result.cards.push(extraCardIndex);
-                return JSON.stringify(result);
+                return new URLSearchParams(result).toString();
             }
 
             function resultsPopup(answers, currentCards) {
-                const resultsUrl = window.location.origin + "/clover#" + getAnswerString(answers, currentCards);
+                const resultsUrl = window.location.origin + "/clover?" + getAnswerString(answers, currentCards);
                 withId('result-container').className += ' done';
                 withId('result-text').innerText = resultsUrl;
                 const copyButton = withId('copy-button');
@@ -371,12 +371,6 @@
                 setStyleVar(`${cardObj.stylePrefix}-rotation`, `${cardObj.rotation}deg`);
                 withId("answer-input").value = "";
             }
-
-            const isTouchDevice = () => {  
-                return (('ontouchstart' in window) ||  
-                    (navigator.maxTouchPoints > 0) ||  
-                    (navigator.msMaxTouchPoints > 0));  
-            }  
         </script>
     </head>
     <body>
@@ -407,8 +401,9 @@
             let answers = [{}, {}, {}, {}];
             let startingCards = [];
             const currentCards = [];
-            const hash = decodeURI(window.location.hash.slice(1));
-            const wordEntryMode = hash.length === 0;
+            const queryParams = new URLSearchParams(window.location.search);
+            console.log(queryParams);
+            const wordEntryMode = window.location.search.length === 0;
 
             const playContainerEl = withId("play-container");
             const cardContainerEl = withId("card-container");
@@ -416,15 +411,14 @@
             
             if (!wordEntryMode) {
                 answerContainerEl.className += " hidden";
-                const data = JSON.parse(hash);
                 
-                answers = data.answers.map((answer, index) => {
+                answers = queryParams.get("answers").split(",").map((answer, index) => {
                     const answerEl = el("div", answer, `answer answer-${index + 1}`);
                     cardContainerEl.appendChild(answerEl);
                     return {answer: answer, el: answerEl};
                 });
 
-                startingCards = data.cards;
+                startingCards = queryParams.get("cards").split(",");
             } else {
                 playContainerEl.className += " word-entry";
             }
@@ -539,8 +533,6 @@
                 return rotation;
             }
 
-            window.addEventListener('hashchange', () => window.location.reload());
-
             if (wordEntryMode) {
                 cardContainerEl.addEventListener("touchstart", function (event) {
                     previousAngle = getAngle(event.touches[0]);
@@ -610,7 +602,7 @@
 
                 let startTime = null;
                 let timerFunc = null;
-                const LONG_PRESS_TIME = 400;
+                const LONG_PRESS_TIME = 300;
 
                 function startPress(event, card) {
                     event.preventDefault();
@@ -648,13 +640,11 @@
                 }
 
                 currentCards.forEach((card, index) => {
-                    if (isTouchDevice()) {
-                        card.el.addEventListener("touchstart", (ev) => startPress(ev, card));
-                        card.el.addEventListener("touchend", (ev) => endPress(ev, card));
-                    }
+                    card.el.addEventListener("touchstart", (ev) => startPress(ev, card));
+                    card.el.addEventListener("touchend", (ev) => endPress(ev, card));
 
-                    card.el.addEventListener("mousedown", (ev) => startDrag(ev, card));
-                    card.el.addEventListener("mouseup", (ev) => endDrag(ev, card));
+                    card.el.addEventListener("mousedown", (ev) => startPress(ev, card));
+                    card.el.addEventListener("mouseup", (ev) => endPress(ev, card));
                 });
             }
         </script>
