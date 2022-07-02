@@ -645,12 +645,12 @@
                         if (selectedCard.listIndex === 4) {
                             playContainerEl.replaceChild(swapCardEl, selectedCardEl);
                             cardContainerEl.appendChild(selectedCardEl);
-                            // selectedCard.rotation -= cardContainer.rotation;
-                            // card.rotation += cardContainer.rotation;
+                            selectedCard.rotation -= cardContainer.rotation;
+                            card.rotation += cardContainer.rotation;
                         }
                         if (card.listIndex === 4) {
-                            // card.rotation -= cardContainer.rotation;
-                            // selectedCard.rotation += cardContainer.rotation;
+                            card.rotation -= cardContainer.rotation;
+                            selectedCard.rotation += cardContainer.rotation;
                             playContainerEl.replaceChild(selectedCardEl, swapCardEl);
                             cardContainerEl.appendChild(swapCardEl);
                         }
