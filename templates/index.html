@@ -490,7 +490,7 @@
 
             function handleAnswer() {
                 const formData = new FormData(form);
-                const answer = formData.get("answer");
+                const answer = formData.get("answer").trim();
                 if (!answer) {
                     return;
                 }
