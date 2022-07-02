@@ -608,7 +608,7 @@
                     startTime = Date.now();
                     timerFunc = window.setTimeout(() => {
                         card.el.className += " focused";
-                        window.navigator.vibrate && window.navigator.vibrate(200);
+                        window.navigator.vibrate && window.navigator.vibrate(20);
                     }, LONG_PRESS_TIME);
                 }
 
