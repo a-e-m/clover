@@ -35,7 +35,7 @@ military
 dinosaur
 birthday
 press
-africa
+Africa
 liquid
 twins
 patio
@@ -350,7 +350,7 @@ alcohol
 comforter
 brown
 covered
-furtiture
+furniture
 bank
 lava
 dessert
@@ -672,6 +672,6 @@ owl
 ruin
 stamp
 gas
-appetit
+appetite
 war
 heart

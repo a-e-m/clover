@@ -123,6 +123,12 @@
                 -ms-user-select: none;      
                 user-select: none;
                 transition: transform 0.8s ease-in-out;
+                top: 0;
+                left: 0;
+            }
+
+            .card.animated {
+                transition: transform 0.8s ease-in-out, left 0.5s, top 0.5s;
             }
 
             .card .word {
@@ -143,6 +149,10 @@
 
             .card :nth-child(4) {
                 transform: rotate(270deg) translate(0px, var(--word-offset));
+            }
+
+            .play-container {
+                position: relative;
             }
 
             .card-container {
@@ -517,7 +527,6 @@
             for (let i = 1; i <= cardNum; ++i) {
                 const card = {words: []};
                 const cardEl = el("div", null, "card");
-                cardEl.dataset.index = i;
 
                 let cardWords, index, startingIndex;
                 if (!wordEntryMode) {
@@ -639,26 +648,42 @@
                 });
             } else {
                 function swap(selectedCard, card) {
+                    rotate(selectedCard, 0);
+                    rotate(card, 0);
                     const selectedCardEl = selectedCard.el;
                     const swapCardEl = card.el;
                     if (swapCardEl !== selectedCardEl) {
-                        if (selectedCard.listIndex === 4) {
-                            playContainerEl.replaceChild(swapCardEl, selectedCardEl);
-                            cardContainerEl.appendChild(selectedCardEl);
-                            selectedCard.rotation -= cardContainer.rotation;
-                            card.rotation += cardContainer.rotation;
-                        }
-                        if (card.listIndex === 4) {
-                            card.rotation -= cardContainer.rotation;
-                            selectedCard.rotation += cardContainer.rotation;
-                            playContainerEl.replaceChild(selectedCardEl, swapCardEl);
-                            cardContainerEl.appendChild(swapCardEl);
-                        }
-
                         [currentCards[selectedCard.listIndex], currentCards[card.listIndex]] = [currentCards[card.listIndex], currentCards[selectedCard.listIndex]];
                         [selectedCard.listIndex, card.listIndex] = [card.listIndex, selectedCard.listIndex];
-                        rotate(selectedCard, 0);
-                        rotate(card, 0);
+                        const selectedRect = selectedCardEl.getBoundingClientRect();
+                        const swapRect = swapCardEl.getBoundingClientRect();
+                        selectedCardEl.className += " animated";
+                        selectedCardEl.style.top = `${swapRect.top - selectedRect.top}px`;
+                        selectedCardEl.style.left = `${swapRect.left - selectedRect.left}px`;   
+                        swapCardEl.className += " animated";
+                        swapCardEl.style.top = `${selectedRect.top - swapRect.top}px`;
+                        swapCardEl.style.left = `${selectedRect.left - swapRect.left}px`;
+                        
+                        setTimeout(() => {
+                            if (card.listIndex === 4) {
+                                playContainerEl.replaceChild(swapCardEl, selectedCardEl);
+                                cardContainerEl.appendChild(selectedCardEl);
+                                selectedCard.rotation -= cardContainer.rotation;
+                                card.rotation += cardContainer.rotation;
+                            }
+                            if (selectedCard.listIndex === 4) {
+                                card.rotation -= cardContainer.rotation;
+                                selectedCard.rotation += cardContainer.rotation;
+                                playContainerEl.replaceChild(selectedCardEl, swapCardEl);
+                                cardContainerEl.appendChild(swapCardEl);
+                            }
+                            rotate(selectedCard, 0);
+                            rotate(card, 0);
+                            selectedCardEl.style.top = '0';
+                            selectedCardEl.style.left = '0';
+                            swapCardEl.style.top = '0';
+                            swapCardEl.style.left = '0';
+                        }, 500);
                     } else {
                         rotate(card);
                     }
