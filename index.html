@@ -458,6 +458,7 @@
             </form>
             <div id="check-form" class="check-form">
                 <button id="check-button" class="check-button">Check</button>
+                <span id="check-count" class="check-count"></span>
             </div>
         </div>
         <div id="result-container" class="result-container">
@@ -480,7 +481,9 @@
             const playContainerEl = withId("play-container");
             const cardContainerEl = withId("card-container");
             
+            
             if (!wordEntryMode) {
+                let checkCount = 0;
                 withId("word-form").className += " hidden";
                 withId("check-button").addEventListener("click", () => {
                     currentCards.forEach(card => {
@@ -492,6 +495,8 @@
                             rotate(card, 0);
                         }
                     });
+                    ++checkCount;
+                    withId("check-count").innerText = `Checked ${checkCount} times`;
                 });
                 
                 answers = queryParams.get("answers").split(",").map((answer, index) => {
