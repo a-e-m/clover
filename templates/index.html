@@ -501,11 +501,14 @@
                             rotate(card, 0);
                         }
                     });
+                    let message = "";
                     if (! alreadyChecked.has(fullHash)) {
                         ++checkCount;
+                    } else {
+                        message = "Already checked. ";
                     }
                     alreadyChecked.add(fullHash);
-                    withId("check-count").innerText = `Checked ${checkCount} time${checkCount === 1 ? "" : "s"}`;
+                    withId("check-count").innerText = `${message}Checked ${checkCount} time${checkCount === 1 ? "" : "s"}`;
                 });
                 
                 answers = queryParams.get("answers").split(",").map((answer, index) => {
