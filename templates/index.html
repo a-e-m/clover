@@ -484,10 +484,16 @@
             
             if (!wordEntryMode) {
                 let checkCount = 0;
+                const alreadyChecked = new Set();
                 withId("word-form").className += " hidden";
                 withId("check-button").addEventListener("click", () => {
-                    currentCards.forEach(card => {
-                        if (hashes.has(getCardHash(card))) {
+                    let fullHash = "";
+                    currentCards.forEach((card, index) => {
+                        const cardHash = getCardHash(card);
+                        if (index < 4) {
+                            fullHash += cardHash;
+                        }
+                        if (hashes.has(cardHash)) {
                             card.classes[0] = "card correct";
                             rotate(card, 0);
                         } else {
@@ -495,8 +501,11 @@
                             rotate(card, 0);
                         }
                     });
-                    ++checkCount;
-                    withId("check-count").innerText = `Checked ${checkCount} times`;
+                    if (! alreadyChecked.has(fullHash)) {
+                        ++checkCount;
+                    }
+                    alreadyChecked.add(fullHash);
+                    withId("check-count").innerText = `Checked ${checkCount} time${checkCount === 1 ? "" : "s"}`;
                 });
                 
                 answers = queryParams.get("answers").split(",").map((answer, index) => {
