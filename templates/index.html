@@ -681,16 +681,16 @@
                 });
             } else {
                 function getAnimationOffset(selectedCard, swapCard) {
+                    const rotation = cardContainer.rotation % 360;
                     const selectedRect = selectedCard.el.getBoundingClientRect();
                     const swapRect = swapCard.el.getBoundingClientRect();
                     let dx = swapRect.left - selectedRect.left;
                     let dy = swapRect.top - selectedRect.top;
-                    console.log(cardContainer.rotation);
-                    if (cardContainer.rotation === 0 || swapCard.listIndex === 4) {
+                    if (rotation === 0 || swapCard.listIndex === 4) {
                         return [dx, dy];
-                    } else if (cardContainer.rotation === 90) {
+                    } else if (rotation === 90) {
                         return [dy, -dx];
-                    } else if (cardContainer.rotation === 180) {
+                    } else if (rotation === 180) {
                         return [-dx, -dy];
                     } else {
                         return [-dy, dx];
