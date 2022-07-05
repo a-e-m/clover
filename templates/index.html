@@ -10,6 +10,7 @@
                 --columns: {{ columns }};
                 --card-size: min(calc(60vh / var(--rows)), calc(80vw / var(--columns)));
                 --gray: #444;
+                --black: #444;
                 --yellow: #b5933b;
                 --green: #114611;
                 --red: #671212;
@@ -128,7 +129,7 @@
             }
 
             .card.animated {
-                transition: transform 0.8s ease-in-out, left 0.5s, top 0.5s;
+                transition: transform 0.8s ease-in-out, left 0.5s, top 0.5s, background-color 0.5s;
             }
 
             .card .word {
@@ -192,6 +193,11 @@
 
             .play-container > .card {
                 margin: calc(var(--card-size) * 0.1) auto;
+                background-color: var(--black);
+            }
+
+            .play-container > .card.focused {
+                background-color: var(--selected);
             }
 
             .spinner {
@@ -267,6 +273,7 @@
 
             .correct {
                 background-color: var(--green);
+                transition: transform 0.8s ease-in-out, background-color 0.5s;
             }
 
             .correct::after {
@@ -279,9 +286,10 @@
 
             .wrong {
                 background-color: var(--red);
+                transition: transform 0.8s ease-in-out, background-color 0.5s;
             }
 
-            .wrong::after {
+            .card-container .wrong::after {
                 content: "✘"
             }
 
@@ -420,6 +428,12 @@
                 cardObj.classes.length = 1;
                 cardObj.classes.push("rotate-" + cardObj.rotation);
                 cardObj.classes.push(`${cardObj.stylePrefix}`);
+                const cardHash = getCardHash(cardObj);
+                if (cardObj.wrongChecked && cardObj.wrongChecked.has(cardHash)) {
+                    cardObj.classes.push("wrong");
+                } else if (cardObj.correctChecked && cardObj.correctChecked.has(cardHash)) {
+                    cardObj.classes.push("correct");
+                }
                 if (cardObj.listIndex !== undefined) {
                     cardObj.el.style.order = cardObj.listIndex;
                 }
@@ -494,10 +508,10 @@
                             fullHash += cardHash;
                         }
                         if (hashes.has(cardHash)) {
-                            card.classes[0] = "card correct";
+                            card.correctChecked.add(cardHash);
                             rotate(card, 0);
                         } else {
-                            card.classes[0] = "card wrong";
+                            card.wrongChecked.add(cardHash);
                             rotate(card, 0);
                         }
                     });
@@ -575,7 +589,9 @@
                     classes: ["card"],
                     stylePrefix: `card-${i}`,
                     index,
-                    listIndex: i - 1
+                    listIndex: i - 1,
+                    correctChecked: new Set(),
+                    wrongChecked: new Set()
                 };
                 if (i === 5) {
                     playContainerEl.appendChild(cardEl);
