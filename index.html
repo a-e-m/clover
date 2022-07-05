@@ -680,6 +680,23 @@
                     previousAngle = null;
                 });
             } else {
+                function getAnimationOffset(selectedCard, swapCard) {
+                    const selectedRect = selectedCard.el.getBoundingClientRect();
+                    const swapRect = swapCard.el.getBoundingClientRect();
+                    let dx = swapRect.left - selectedRect.left;
+                    let dy = swapRect.top - selectedRect.top;
+                    console.log(cardContainer.rotation);
+                    if (cardContainer.rotation === 0 || swapCard.listIndex === 4) {
+                        return [dx, dy];
+                    } else if (cardContainer.rotation === 90) {
+                        return [dy, -dx];
+                    } else if (cardContainer.rotation === 180) {
+                        return [-dx, -dy];
+                    } else {
+                        return [-dy, dx];
+                    }
+                }
+
                 function swap(selectedCard, card) {
                     rotate(selectedCard, 0);
                     rotate(card, 0);
@@ -688,21 +705,21 @@
                     if (swapCardEl !== selectedCardEl) {
                         [currentCards[selectedCard.listIndex], currentCards[card.listIndex]] = [currentCards[card.listIndex], currentCards[selectedCard.listIndex]];
                         [selectedCard.listIndex, card.listIndex] = [card.listIndex, selectedCard.listIndex];
-                        const selectedRect = selectedCardEl.getBoundingClientRect();
-                        const swapRect = swapCardEl.getBoundingClientRect();
                         selectedCardEl.className += " animated";
-                        selectedCardEl.style.top = `${swapRect.top - selectedRect.top}px`;
-                        selectedCardEl.style.left = `${swapRect.left - selectedRect.left}px`;   
+                        let [dx, dy] = getAnimationOffset(selectedCard, card);
+                        selectedCardEl.style.left = `${dx}px`;   
+                        selectedCardEl.style.top = `${dy}px`;
                         swapCardEl.className += " animated";
-                        swapCardEl.style.top = `${selectedRect.top - swapRect.top}px`;
-                        swapCardEl.style.left = `${selectedRect.left - swapRect.left}px`;
+                        [dx, dy] = getAnimationOffset(card, selectedCard);
+                        swapCardEl.style.left = `${dx}px`;
+                        swapCardEl.style.top = `${dy}px`;
                         
                         setTimeout(() => {
                             if (card.listIndex === 4) {
-                                playContainerEl.replaceChild(swapCardEl, selectedCardEl);
-                                cardContainerEl.appendChild(selectedCardEl);
                                 selectedCard.rotation -= cardContainer.rotation;
                                 card.rotation += cardContainer.rotation;
+                                playContainerEl.replaceChild(swapCardEl, selectedCardEl);
+                                cardContainerEl.appendChild(selectedCardEl);
                             }
                             if (selectedCard.listIndex === 4) {
                                 card.rotation -= cardContainer.rotation;
