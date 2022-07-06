@@ -27,7 +27,7 @@
                 color: var(--text-color);
                 background-color: var(--background);
                 text-align: center;
-                font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+                font-family: 'Franklin Gothic Medium', Helvetica, Arial, sans-serif;
                 display: flex;
                 flex-direction: column;
                 justify-content: space-evenly;
@@ -454,13 +454,26 @@
                 h2 = Math.imul(h2 ^ (h2>>>16), 2246822507) ^ Math.imul(h1 ^ (h1>>>13), 3266489909);
                 return (h2>>>0).toString(16).padStart(8,0) + (h1>>>0).toString(16).padStart(8,0);
             };
+
+            function getLocal(key, value) {
+                return JSON.parse(localStorage.getItem(key));
+            }
+
+            function setLocal(key, value) {
+                localStorage.setItem(key, JSON.stringify(value));
+            }
+
+            function clearLocal() {
+                localStorage.removeItem("answers");
+                localStorage.removeItem("currentCards");
+            }
         </script>
     </head>
     <body>
         <div>
             <h1 id="title">🍀Clover</h1>
             <a href="./instructions.html">Instructions</a>
-            <a href="./">Reset</a>
+            <a id="reset" href="./">Reset</a>
         </div>
         <div id="play-container" class="play-container">
             <div id="card-container" class="card-container"></div>
@@ -494,8 +507,15 @@
 
             const playContainerEl = withId("play-container");
             const cardContainerEl = withId("card-container");
+
+
+            const createAnswer = (answer, index) => {
+                const answerEl = el("div", answer, `answer answer-${index + 1}`);
+                cardContainerEl.appendChild(answerEl);
+                return {answer: answer, el: answerEl};
+            };
             
-            
+
             if (!wordEntryMode) {
                 let checkCount = 0;
                 const alreadyChecked = new Set();
@@ -525,13 +545,9 @@
                     withId("check-count").innerText = `${message}Checked ${checkCount} time${checkCount === 1 ? "" : "s"}`;
                 });
                 
-                answers = queryParams.get("answers").split(",").map((answer, index) => {
-                    const answerEl = el("div", answer, `answer answer-${index + 1}`);
-                    cardContainerEl.appendChild(answerEl);
-                    return {answer: answer, el: answerEl};
-                });
+                answers = queryParams.get("answers").split(",").map(createAnswer);
 
-                 queryParams.get("cards").split(",").forEach(card => {
+                queryParams.get("cards").split(",").forEach(card => {
                     const [cardIndex, hash] = card.split('|');
                     startingCards.push(cardIndex);
                     hashes.add(hash); 
@@ -544,6 +560,14 @@
             } else {
                 withId("check-form").className += " hidden";
                 playContainerEl.className += " word-entry";
+
+                if (getLocal("answers")) {
+                    answers = getLocal("answers").map(createAnswer);
+                }
+
+                if (getLocal("currentCards")) {
+                    startingCards = getLocal("currentCards");
+                }
             }
 
             const cardContainer = {
@@ -558,12 +582,19 @@
             for (let i = 1; i <= cardNum; ++i) {
                 const card = {words: []};
                 const cardEl = el("div", null, "card");
+                let rotation = 0;
+                rotation = randomChoice([0, 90, 180, 270])[0];
 
                 let cardWords, index, startingIndex;
                 if (!wordEntryMode) {
                     [index, startingIndex] = randomChoice(startingCards);
                     startingCards.splice(startingIndex, 1);
                     cardWords = cards[index];
+                } else if (startingCards.length) {
+                    const savedCard = startingCards[i - 1];
+                    index = savedCard.index;
+                    cardWords = cards[index];
+                    rotation = savedCard.rotation;
                 } else {
                     [cardWords, index] = randomCard(alreadySeen);
                     alreadySeen.add(index);
@@ -578,9 +609,6 @@
                         wordEl
                     });
                 }
-
-                let rotation = 0;
-                rotation = randomChoice([0, 90, 180, 270])[0];
 
                 const cardObj = {
                     card,
@@ -624,8 +652,18 @@
                     el: answerEl
                 };
 
+                setLocal("currentCards", currentCards.map(cardObj => {
+                    return {
+                        rotation: cardObj.rotation,
+                        index: cardObj.index,
+                        listIndex: cardObj.listIndex
+                    };
+                }));
+                setLocal("answers", answers.map(obj => obj.answer));
+
                 if (answers.every(obj => obj.answer)) {
                     resultsPopup(answers, currentCards);
+                    clearLocal();
                 }
             }
 
@@ -805,6 +843,10 @@
                     card.el.addEventListener("mouseup", (ev) => endPress(ev, card));
                 });
             }
+
+            withId("reset").addEventListener("click", () => {
+                clearLocal();
+            });
         </script>
     </body>
 </html>
