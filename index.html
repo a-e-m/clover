@@ -383,8 +383,12 @@
                 document.documentElement.style.setProperty(`--${name}`, value);
             }
 
+            function normalizeAngle(angle) {
+                return ((angle % 360) + 360) % 360;
+            }
+
             function getCardHash(cardObj) {
-                return cyrb53([cardObj.listIndex, cardObj.index, (cardObj.rotation % 360)].join('-'));
+                return cyrb53([cardObj.listIndex, cardObj.index, normalizeAngle(cardObj.rotation)].join('-'));
             }
 
             function getAnswerString(answers, currentCards) {
@@ -639,7 +643,7 @@
                 if (!answer) {
                     return;
                 }
-                const currentWord = (cardContainer.rotation % 360) / 90;
+                const currentWord = normalizeAngle(cardContainer.rotation) / 90;
                 let answerEl = answers[currentWord].el;
                 if (answerEl) {
                     answerEl.innerText = answer;
@@ -719,7 +723,7 @@
                 });
             } else {
                 function getAnimationOffset(selectedCard, swapCard) {
-                    const rotation = cardContainer.rotation % 360;
+                    const rotation = normalizeAngle(cardContainer.rotation);
                     const selectedRect = selectedCard.el.getBoundingClientRect();
                     const swapRect = swapCard.el.getBoundingClientRect();
                     let dx = swapRect.left - selectedRect.left;
